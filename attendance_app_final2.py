@@ -164,9 +164,9 @@ if st.session_state.role in ["teacher", "admin", "dept_admin"]:
                 attendance = pd.concat([attendance, new_df], ignore_index=True)
                 attendance.to_csv("attendance.csv", index=False)
                 st.success("✅ Attendance recorded.")
-                st.write("Debug: Last few records saved:")
-                st.write(attendance.tail())  # Optional debug output
-                st.rerun()
+                # st.write("Debug: Last few records saved:")
+                # st.write(attendance.tail())  # Optional debug output
+                # st.rerun()
                 # ------------------- Instant Report -------------------
                 st.subheader("📊 Attendance Summary")
                 summary = new_df.groupby("status")["student_id"].count().reset_index()

@@ -112,8 +112,6 @@ if st.session_state.role == "teacher":
         # Ensure selected_date is datetime for comparison
         selected_date = pd.to_datetime(selected_date)
 
-        attendance["date"] = pd.to_datetime(attendance["date"], errors='coerce')
-
         taken_hours = attendance[(attendance["course_id"] == selected_course) &
                                  (attendance["date"] == selected_date)]["hour"].tolist()
 
@@ -140,7 +138,7 @@ if st.session_state.role == "teacher":
                     f"{row['name']} ({row['student_id']})",
                     ["P", "A", "NSS", "NCC", "Club"],
                     index=0,
-                    key=f"{row['student_id']}_{selected_hour}"
+                    key=f"{row['student_id']}_{selected_hour}_{selected_date}"
                 )
                 updated_status[row["student_id"]] = status
 
@@ -165,6 +163,31 @@ if st.session_state.role == "teacher":
                 st.rerun()
         else:
             st.warning("\u26A0\uFE0F No students enrolled in this course.")
+
+# ------------------- Admin & Dept Admin Camp Day Management -------------------
+if st.session_state.role in ["admin", "dept_admin"]:
+    st.subheader("⛺ Manage Camp Days")
+    with st.form("Add Camp Day"):
+        student_id = st.selectbox("Select Student", students["student_id"])
+        start_date = st.date_input("Start Date")
+        end_date = st.date_input("End Date")
+        activity = st.selectbox("Activity", ["NSS", "NCC", "Camp"])
+        if st.form_submit_button("Add Camp Day"):
+            new_entry = pd.DataFrame([{"student_id": student_id, "start_date": start_date, "end_date": end_date, "activity": activity}])
+            camp_days = pd.concat([camp_days, new_entry], ignore_index=True)
+            camp_days.to_csv("camp_days.csv", index=False)
+            st.success("Camp days added.")
+
+    if not camp_days.empty:
+        st.write("### Existing Camp Days")
+        camp_days_display = camp_days.copy()
+        camp_days_display["start_date"] = pd.to_datetime(camp_days_display["start_date"]).dt.date
+        camp_days_display["end_date"] = pd.to_datetime(camp_days_display["end_date"]).dt.date
+        selected_idx = st.selectbox("Select entry to delete", camp_days_display.index.tolist())
+        if st.button("Delete Selected Entry"):
+            camp_days = camp_days.drop(index=selected_idx).reset_index(drop=True)
+            camp_days.to_csv("camp_days.csv", index=False)
+            st.success("Selected camp entry deleted.")
 
 # ------------------- Department-wise Report -------------------
 if st.session_state.role in ["admin", "dept_admin"]:

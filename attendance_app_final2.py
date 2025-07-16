@@ -146,35 +146,29 @@ if st.session_state.role in ["teacher", "admin", "dept_admin"]:
                 )
                 updated_status[row["student_id"]] = status
 
-        if st.button("✅ Submit Attendance"):
-            new_data = []
-            for sid, status in updated_status.items():
-                new_data.append({
-                    "date": selected_date,
-                    "hour": selected_hour,
-                    "course_id": selected_course,
-                    "student_id": sid,
-                    "status": status,
-                    "marked_by": st.session_state.teacher_id,
-                    "extra_time": extra_time,
-                    "duration": duration
-                })
+            if st.button("✅ Submit Attendance"):
+                new_data = []
+                for sid, status in updated_status.items():
+                    new_data.append({
+                        "date": selected_date,
+                        "hour": selected_hour,
+                        "course_id": selected_course,
+                        "student_id": sid,
+                        "status": status,
+                        "marked_by": st.session_state.teacher_id,
+                        "extra_time": extra_time,
+                        "duration": duration
+                    })
 
-            new_df = pd.DataFrame(new_data)
-
-    if new_df.empty:
-        st.warning("⚠️ No attendance data to save.")
-    else:
-        try:
-            attendance = pd.concat([attendance, new_df], ignore_index=True)
-            attendance.to_csv("attendance.csv", index=False)
-            st.success("✅ Attendance recorded.")
-            st.write("Debug: Last few records saved:")
-            st.write(attendance.tail())  # Optional debug output
-            st.rerun()
-        except Exception as e:
-            st.error(f"❌ Failed to save attendance: {e}")
-
+                new_df = pd.DataFrame(new_data)
+                attendance = pd.concat([attendance, new_df], ignore_index=True)
+                attendance.to_csv("attendance.csv", index=False)
+                st.success("✅ Attendance recorded.")
+                st.write("Debug: Last few records saved:")
+                st.write(attendance.tail())  # Optional debug output
+                st.rerun()
+        else:
+            st.warning("⚠️ No students enrolled in this course.")
 # ------------------- Admin & Dept Admin Camp Day Management -------------------
 if st.session_state.role in ["admin", "dept_admin"]:
     st.subheader("⛺ Manage Camp Days")

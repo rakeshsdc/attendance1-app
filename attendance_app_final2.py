@@ -100,8 +100,10 @@ if st.session_state.role in ["admin", "dept_admin"]:
         except Exception as e:
             st.error(f"❌ Failed to process file: {e}")
 # ------------------- Attendance Console for Teacher -------------------
-if st.session_state.role == "teacher":
-    st.subheader("\U0001F4D8 Take Attendance")
+if st.session_state.role in ["teacher", "admin", "dept_admin"]:
+    assigned_courses = courses[courses["teacher_id"] == st.session_state.teacher_id]
+    if not assigned_courses.empty:
+        st.subheader("📘 Take Attendance")
     assigned_courses = courses[courses["teacher_id"] == st.session_state.teacher_id]
     if assigned_courses.empty:
         st.info("You have no assigned courses.")
@@ -111,6 +113,8 @@ if st.session_state.role == "teacher":
 
         # Ensure selected_date is datetime for comparison
         selected_date = pd.to_datetime(selected_date)
+
+        attendance["date"] = pd.to_datetime(attendance["date"], errors='coerce')
 
         taken_hours = attendance[(attendance["course_id"] == selected_course) &
                                  (attendance["date"] == selected_date)]["hour"].tolist()
@@ -138,7 +142,7 @@ if st.session_state.role == "teacher":
                     f"{row['name']} ({row['student_id']})",
                     ["P", "A", "NSS", "NCC", "Club"],
                     index=0,
-                    key=f"{row['student_id']}_{selected_hour}_{selected_date}"
+                    key=f"{row['student_id']}_{selected_hour}_{selected_course}"
                 )
                 updated_status[row["student_id"]] = status
 

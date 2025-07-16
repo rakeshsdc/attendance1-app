@@ -1,0 +1,12 @@
+course_id,name,teacher_id
+MJPHY,Major Physics,T001
+MJCHE,Major Chemistry,T002
+MNPHY,Minor Physics,T003
+MNCHE,Minor Chemistry,T004
+MNMAT,Minor Maths,T005
+MDCENG,MDC English,T006
+MDCPHY,MDC Physics,T001
+MDCMAT,MDC Maths,T005
+VACCHE,VAC Chemistry,T002
+VACENG,VAC English,T006
+VACPHY,VAC Physics,T003

@@ -201,6 +201,9 @@ if st.session_state.role in ["admin", "dept_admin"]:
 
     filtered_attendance["date_str"] = filtered_attendance["date"].dt.strftime("%Y-%m-%d")
     filtered_attendance = filtered_attendance[~filtered_attendance.apply(lambda x: (x["student_id"], x["date_str"]) in camp_set, axis=1)]
+    if filtered_attendance.empty:
+        st.info("No attendance data found yet for this date range.")
+        st.stop()
 
     # Get all students under department (if dept_admin) or all (if admin)
     if dept_id:

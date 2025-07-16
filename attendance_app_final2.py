@@ -25,12 +25,12 @@ def load_data():
     except:
         enrollment = pd.DataFrame(columns=["student_id", "course_id"])
     try:
-    attendance = pd.read_csv("attendance.csv")
-    if "student_id" not in attendance.columns:
-        attendance.columns = ["date", "hour", "course_id", "student_id", "status", "marked_by", "extra_time", "duration"]
-    attendance["date"] = pd.to_datetime(attendance["date"], errors='coerce')
+        attendance = pd.read_csv("attendance.csv")
+        if "student_id" not in attendance.columns:
+            attendance.columns = ["date", "hour", "course_id", "student_id", "status", "marked_by", "extra_time", "duration"]
+        attendance["date"] = pd.to_datetime(attendance["date"], errors='coerce')
     except:
-    attendance = pd.DataFrame(columns=["date", "hour", "course_id", "student_id", "status", "marked_by", "extra_time", "duration"])
+        attendance = pd.DataFrame(columns=["date", "hour", "course_id", "student_id", "status", "marked_by", "extra_time", "duration"])
     try:
         camp_days = pd.read_csv("camp_days.csv", parse_dates=["start_date", "end_date"])
     except:

@@ -160,9 +160,9 @@ if st.session_state.role in ["teacher", "admin", "dept_admin"]:
                         "marked_by": st.session_state.teacher_id,
                         "extra_time": extra_time,
                         "duration": duration
-                })
+                    })
 
-            new_df = pd.DataFrame(new_data)
+                new_df = pd.DataFrame(new_data)
 
             # Load existing attendance to avoid losing data
             try:

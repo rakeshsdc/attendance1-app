@@ -112,6 +112,8 @@ if st.session_state.role == "teacher":
         # Ensure selected_date is datetime for comparison
         selected_date = pd.to_datetime(selected_date)
 
+        attendance["date"] = pd.to_datetime(attendance["date"], errors='coerce')
+
         taken_hours = attendance[(attendance["course_id"] == selected_course) &
                                  (attendance["date"] == selected_date)]["hour"].tolist()
 

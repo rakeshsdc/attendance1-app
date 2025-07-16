@@ -26,6 +26,7 @@ def load_data():
         enrollment = pd.DataFrame(columns=["student_id", "course_id"])
     try:
         attendance = pd.read_csv("attendance.csv")
+        attendance["date"] = pd.to_datetime(attendance["date"], errors='coerce')
     except:
         attendance = pd.DataFrame(columns=["date", "hour", "course_id", "student_id", "status", "marked_by", "extra_time", "duration"])
     try:
@@ -66,7 +67,6 @@ else:
         for k in list(st.session_state.keys()):
             del st.session_state[k]
         st.rerun()
-
 # ------------------- Dashboard Summary -------------------
 if st.session_state.role in ["admin", "dept_admin"]:
     st.subheader("📊 Dashboard Overview")

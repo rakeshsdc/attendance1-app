@@ -167,6 +167,11 @@ if st.session_state.role in ["teacher", "admin", "dept_admin"]:
                 st.write("Debug: Last few records saved:")
                 st.write(attendance.tail())  # Optional debug output
                 st.rerun()
+                # ------------------- Instant Report -------------------
+                st.subheader("📊 Attendance Summary")
+                summary = new_df.groupby("status")["student_id"].count().reset_index()
+                summary.columns = ["Status", "Count"]
+                st.dataframe(summary)
         else:
             st.warning("⚠️ No students enrolled in this course.")
 # ------------------- Admin & Dept Admin Camp Day Management -------------------

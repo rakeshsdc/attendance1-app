@@ -174,6 +174,48 @@ if st.session_state.role in ["teacher", "admin", "dept_admin"]:
                 st.dataframe(summary)
         else:
             st.warning("⚠️ No students enrolled in this course.")
+            # ------------------- Consolidated Department Report (All Courses of Students) -------------------
+if st.session_state.role in ["admin", "dept_admin"]:
+    st.subheader("\U0001F4CB Consolidated Department Attendance Report")
+
+    dept_id = st.session_state.department if st.session_state.role == "dept_admin" else None
+    from_dt = st.date_input("From Date", value=date.today())
+    to_dt = st.date_input("To Date", value=date.today())
+
+    from_dt = pd.to_datetime(from_dt)
+    to_dt = pd.to_datetime(to_dt)
+
+    filtered_attendance = attendance[(attendance["date"] >= from_dt) & (attendance["date"] <= to_dt)].copy()
+
+    # Exclude camp days
+    camp_set = set()
+    for _, row in camp_days.iterrows():
+        for d in pd.date_range(row["start_date"], row["end_date"]):
+            camp_set.add((row["student_id"], d.strftime("%Y-%m-%d")))
+
+    filtered_attendance["date_str"] = filtered_attendance["date"].dt.strftime("%Y-%m-%d")
+    filtered_attendance = filtered_attendance[~filtered_attendance.apply(lambda x: (x["student_id"], x["date_str"]) in camp_set, axis=1)]
+
+    if dept_id:
+        dept_students = students[students["major_course"] == dept_id]
+    else:
+        dept_students = students
+
+    enrolled_ids = enrollment[enrollment["student_id"].isin(dept_students["student_id"])]
+    all_course_att = filtered_attendance[filtered_attendance["student_id"].isin(dept_students["student_id"])]
+
+    summary = all_course_att.groupby("student_id")["status"].agg([
+        ("attended", lambda x: (x != "A").sum()),
+        ("total", "count")
+    ]).reset_index()
+    summary["percent"] = (summary["attended"] / summary["total"] * 100).round(1)
+
+    report = pd.merge(dept_students, summary, on="student_id", how="left").fillna(0)
+    report["attended"] = report["attended"].astype(int)
+    report["total"] = report["total"].astype(int)
+
+    st.dataframe(report[["student_id", "name", "attended", "total", "percent"]])
+    st.download_button("\U0001F4E5 Download Consolidated Report", data=report.to_csv(index=False), file_name="consolidated_report.csv", mime="text/csv")
 # ------------------- Admin & Dept Admin Camp Day Management -------------------
 if st.session_state.role in ["admin", "dept_admin"]:
     st.subheader("⛺ Manage Camp Days")

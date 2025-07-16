@@ -147,18 +147,18 @@ if st.session_state.role in ["teacher", "admin", "dept_admin"]:
                 updated_status[row["student_id"]] = status
 
         if st.button("✅ Submit Attendance"):
-    new_data = []
-    for sid, status in updated_status.items():
-        new_data.append({
-            "date": selected_date,
-            "hour": selected_hour,
-            "course_id": selected_course,
-            "student_id": sid,
-            "status": status,
-            "marked_by": st.session_state.teacher_id,
-            "extra_time": extra_time,
-            "duration": duration
-        })
+            new_data = []
+            for sid, status in updated_status.items():
+                new_data.append({
+                    "date": selected_date,
+                    "hour": selected_hour,
+                    "course_id": selected_course,
+                    "student_id": sid,
+                    "status": status,
+                    "marked_by": st.session_state.teacher_id,
+                    "extra_time": extra_time,
+                    "duration": duration
+                })
 
 
     new_df = pd.DataFrame(new_data)

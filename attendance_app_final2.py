@@ -19,7 +19,10 @@ def load_data():
     students = pd.read_csv("students.csv")
     teachers = pd.read_csv("teachers.csv")
     courses = pd.read_csv("courses.csv")
-    enrollment = pd.read_csv("enrollment.csv")
+    try:
+        enrollment = pd.read_csv("enrollment.csv")
+    except:
+        enrollment = pd.DataFrame(columns=["student_id", "course_id"])
     try:
         attendance = pd.read_csv("attendance.csv")
     except:
@@ -102,15 +105,15 @@ if st.session_state.role == "teacher":
         selected_course = st.selectbox("Select Course", assigned_courses["course_id"].tolist())
         selected_date = st.date_input("Date", value=date.today())
 
-        # Hour masking
+        # Hour masking (all attendance that day regardless of course)
         attendance["date"] = pd.to_datetime(attendance["date"])
-        taken_hours = attendance[
-            (attendance["course_id"] == selected_course) &
-            (attendance["date"] == pd.to_datetime(selected_date))
-        ]["hour"].tolist()
+        taken_hours_all = attendance[
+            (attendance["date"] == pd.to_datetime(selected_date)) &
+            (attendance["hour"] != 0)  # exclude extra hour
+        ]["hour"].unique().tolist()
 
         hours = [1, 2, 3, 4, 5, 6]
-        available_hours = [h for h in hours if h not in taken_hours]
+        available_hours = [h for h in hours if h not in taken_hours_all]
         selected_hour = st.selectbox("Hour", available_hours + ["Extra Hour"])
 
         extra_time = ""
@@ -125,7 +128,6 @@ if st.session_state.role == "teacher":
 
         if not students_list.empty:
             st.write("### Mark Attendance (default is Present)")
-            default_status = {sid: "P" for sid in students_list["student_id"]}
             updated_status = {}
 
             for _, row in students_list.iterrows():
@@ -161,22 +163,18 @@ if st.session_state.role == "teacher":
 
 # ------------------- Admin / Dept Admin Reports -------------------
 if st.session_state.role in ["admin", "dept_admin"]:
-    st.subheader("📊 Reports")
+    st.subheader("📊 Department-wise Reports")
     from_dt = st.date_input("From Date", value=date.today())
     to_dt = st.date_input("To Date", value=date.today())
 
     attendance["date"] = pd.to_datetime(attendance["date"])
-    filtered = attendance[
-        (attendance["date"] >= pd.to_datetime(from_dt)) &
-        (attendance["date"] <= pd.to_datetime(to_dt))
-    ].copy()
+    filtered = attendance[(attendance["date"] >= from_dt) & (attendance["date"] <= to_dt)].copy()
 
-    # Remove camp days
+    # Exclude camp days
     camp_set = set()
     for _, row in camp_days.iterrows():
-        dates = pd.date_range(row["start_date"], row["end_date"]).strftime("%Y-%m-%d")
-        for d in dates:
-            camp_set.add((row["student_id"], d))
+        for d in pd.date_range(row["start_date"], row["end_date"]):
+            camp_set.add((row["student_id"], d.strftime("%Y-%m-%d")))
     filtered["date_str"] = filtered["date"].dt.strftime("%Y-%m-%d")
     filtered = filtered[~filtered.apply(lambda x: (x["student_id"], x["date_str"]) in camp_set, axis=1)]
 
@@ -195,14 +193,15 @@ if st.session_state.role in ["admin", "dept_admin"]:
             ("total", "count")
         ]).reset_index()
         summary["percent"] = (summary["attended"] / summary["total"] * 100).round(1)
+
         report = pd.merge(dept_students, summary, on="student_id", how="left").fillna(0)
         report["attended"] = report["attended"].astype(int)
         report["total"] = report["total"].astype(int)
 
-        st.write("### 📋 Consolidated Report")
+        st.write("### 📋 Consolidated Department Report")
         st.dataframe(report[["student_id", "name", "total", "attended", "percent"]])
-        st.download_button("📥 Download Consolidated", report.to_csv(index=False), "consolidated.csv")
+        st.download_button("📥 Download Consolidated Report", report.to_csv(index=False), "consolidated_report.csv")
 
-        detailed = pd.merge(final_data, students, on="student_id", how="left")
-        st.write("### 📅 Detailed Log")
-        st.download_button("📥 Download Log", detailed.to_csv(index=False), "log.csv")
+        detailed_log = pd.merge(final_data, students, on="student_id", how="left")
+        st.write("### 🧾 Detailed Log")
+        st.download_button("📥 Download Detailed Log", detailed_log.to_csv(index=False), "detailed_log.csv")

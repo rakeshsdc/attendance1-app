@@ -160,18 +160,27 @@ if st.session_state.role in ["teacher", "admin", "dept_admin"]:
                         "marked_by": st.session_state.teacher_id,
                         "extra_time": extra_time,
                         "duration": duration
-                    })
+                })
 
-                new_df = pd.DataFrame(new_data)
-                attendance = pd.concat([attendance, new_df], ignore_index=True)
-                attendance.to_csv("attendance.csv", index=False)
-                # ✅ Immediately reload to make changes available for reports
-                attendance = pd.read_csv("attendance.csv")
-                attendance["date"] = pd.to_datetime(attendance["date"], errors='coerce')
-                st.success("✅ Attendance recorded.")
-                # st.write("Debug: Last few records saved:")
-                # st.write(attendance.tail())  # Optional debug output
-                # st.rerun()
+            new_df = pd.DataFrame(new_data)
+
+            # Load existing attendance to avoid losing data
+            try:
+                existing = pd.read_csv("attendance.csv")
+                existing["date"] = pd.to_datetime(existing["date"], errors='coerce')
+            except:
+                existing = pd.DataFrame(columns=["date", "hour", "course_id", "student_id", "status", "marked_by", "extra_time", "duration"])
+
+            # Remove any existing duplicates (same date, hour, course, student) before appending
+            combined = pd.concat([existing, new_df], ignore_index=True)
+            combined.drop_duplicates(subset=["date", "hour", "course_id", "student_id"], keep="last", inplace=True)
+
+    # Save updated attendance
+            combined.to_csv("attendance.csv", index=False)
+
+            st.success("✅ Attendance recorded and saved.")
+            st.rerun()
+
                 # ------------------- Instant Report -------------------
                 st.subheader("📊 Attendance Summary")
                 summary = new_df.groupby("status")["student_id"].count().reset_index()

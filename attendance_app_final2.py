@@ -160,8 +160,7 @@ if st.session_state.role in ["teacher", "admin", "dept_admin"]:
                     "duration": duration
                 })
 
-
-    new_df = pd.DataFrame(new_data)
+            new_df = pd.DataFrame(new_data)
 
     if new_df.empty:
         st.warning("⚠️ No attendance data to save.")

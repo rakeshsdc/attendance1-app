@@ -1,7 +1,6 @@
 import streamlit as st
 import pandas as pd
 from datetime import date, datetime
-import matplotlib.pyplot as plt
 
 st.set_page_config(page_title="FYUGP Attendance", layout="wide")
 

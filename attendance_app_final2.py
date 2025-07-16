@@ -179,13 +179,13 @@ if st.session_state.role in ["teacher", "admin", "dept_admin"]:
             combined.to_csv("attendance.csv", index=False)
 
             st.success("✅ Attendance recorded and saved.")
-            st.rerun()
-
+            
                 # ------------------- Instant Report -------------------
-                st.subheader("📊 Attendance Summary")
-                summary = new_df.groupby("status")["student_id"].count().reset_index()
-                summary.columns = ["Status", "Count"]
-                st.dataframe(summary)
+            st.subheader("📊 Attendance Summary")
+            summary = new_df.groupby("status")["student_id"].count().reset_index()
+            summary.columns = ["Status", "Count"]
+            st.dataframe(summary)
+            st.rerun()
         else:
             st.warning("⚠️ No students enrolled in this course.")
             # ------------------- Consolidated Department Report (All Courses of Students) -------------------

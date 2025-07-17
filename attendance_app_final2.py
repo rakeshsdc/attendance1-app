@@ -165,30 +165,28 @@ if st.session_state.role in ["teacher", "admin", "dept_admin"]:
                 # ✅ Convert to DataFrame
                 if new_data:
                     new_df = pd.DataFrame(new_data)
-                else:
-                    st.error("No attendance data to submit.")
-                    st.stop()
 
             # Load existing attendance to avoid losing data
-            try:
-                existing = pd.read_csv("attendance.csv")
-                existing["date"] = pd.to_datetime(existing["date"], errors='coerce')
-            except FileNotFoundError:
-                existing = pd.DataFrame(columns=["date", "hour", "course_id", "student_id", "status", "marked_by", "extra_time", "duration"])
+                    try:
+                        existing = pd.read_csv("attendance.csv")
+                        existing["date"] = pd.to_datetime(existing["date"], errors='coerce')
+                    except FileNotFoundError:
+                        existing = pd.DataFrame(columns=["date", "hour", "course_id", "student_id", "status", "marked_by", "extra_time", "duration"])
             # ✅ Ensure 'existing' is a DataFrame and columns match
-            required_columns = ["date", "hour", "course_id", "student_id", "status", "marked_by", "extra_time", "duration"]
-            for col in required_columns:
-                if col not in existing.columns:
-                    existing[col] = None  # or appropriate default
-            try:
-                combined = pd.concat([existing, new_df], ignore_index=True)
-                combined.to_csv("attendance.csv", index=False)
-                st.success("Attendance submitted successfully!")
-                st.subheader("📊 Attendance Summary (Last Submission)")
-                st.write(new_df)
-            except Exception as e:
-                st.error(f"❌ Error while saving attendance: {e}")
-            
+                    required_columns = ["date", "hour", "course_id", "student_id", "status", "marked_by", "extra_time", "duration"]
+                    for col in required_columns:
+                        if col not in existing.columns:
+                            existing[col] = None  # or appropriate default
+                    try:
+                        combined = pd.concat([existing, new_df], ignore_index=True)
+                        combined.to_csv("attendance.csv", index=False)
+                        st.success("Attendance submitted successfully!")
+                        st.subheader("📊 Attendance Summary (Last Submission)")
+                        st.write(summary)
+                    except Exception as e:
+                        st.error(f"❌ Error while saving attendance: {e}")
+             else:
+                    st.warning("No attendance data to submit.")
                 # ------------------- Instant Report -------------------
             st.subheader("📊 Attendance Summary")
             summary = new_df.groupby("status")["student_id"].count().reset_index()

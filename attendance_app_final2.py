@@ -182,20 +182,29 @@ if st.session_state.role in ["teacher", "admin", "dept_admin"]:
                     except Exception as e:
                         st.error(f"❌ Error while saving attendance: {e}")
 
-# ------------------- Camp Days Entry -------------------
-if st.session_state.role in ["admin", "dept_admin"]:
-    st.subheader("🏕️ Camp Day Entry")
-    with st.form("camp_form"):
-        student_id = st.selectbox("Select Student", students["student_id"].tolist())
-        activity = st.selectbox("Activity", ["NSS", "NCC", "Club", "Camp"])
-        start_date = st.date_input("Start Date")
-        end_date = st.date_input("End Date")
-        submit_camp = st.form_submit_button("Add Camp Entry")
-        if submit_camp:
-            new_camp = pd.DataFrame.from_dict([{ "student_id": student_id, "start_date": start_date, "end_date": end_date, "activity": activity }])
-            camp_days = pd.concat([camp_days, new_camp], ignore_index=True)
-            camp_days.to_csv("camp_days.csv", index=False)
-            st.success("Camp entry added.")
+ Camp Days Entry
+st.subheader("🏕️ Camp Days Entry")
+camp_student = st.selectbox("Select Student", students_df["student_id"].unique(), key="camp_student")
+camp_type = st.selectbox("Camp Type", ["NSS", "NCC"], key="camp_type")
+camp_start = st.date_input("Start Date", key="camp_start")
+camp_end = st.date_input("End Date", key="camp_end")
+if st.button("➕ Add Camp Days"):
+    new_camp = pd.DataFrame([[camp_student, camp_start, camp_end, camp_type]], columns=["student_id", "start_date", "end_date", "camp_type"])
+    camp_df = pd.concat([camp_df, new_camp], ignore_index=True)
+    camp_df.to_csv(camp_file, index=False)
+    st.success("✅ Camp days added.")
+
+# Delete Camp Entry
+st.subheader("🗑️ Delete Camp Days")
+if not camp_df.empty:
+    row_to_delete = st.selectbox("Select Entry to Delete", camp_df.index, key="delete_row")
+    st.write(camp_df.loc[row_to_delete])
+    if st.button("Delete Selected Entry"):
+        camp_df = camp_df.drop(index=row_to_delete)
+        camp_df.to_csv(camp_file, index=False)
+        st.success("✅ Camp day entry deleted.")
+else:
+    st.info("No camp day entries available to delete.")
 
 # ------------------- Delete Attendance Entry -------------------
 if st.session_state.role in ["admin", "dept_admin"]:

@@ -185,8 +185,8 @@ if st.session_state.role in ["teacher", "admin", "dept_admin"]:
                         st.write(summary)
                     except Exception as e:
                         st.error(f"❌ Error while saving attendance: {e}")
-                 else:
-                    st.warning("No attendance data to submit.")
+        else:
+            st.warning("No attendance data to submit.")
                 # ------------------- Instant Report -------------------
             st.subheader("📊 Attendance Summary")
             summary = new_df.groupby("status")["student_id"].count().reset_index()

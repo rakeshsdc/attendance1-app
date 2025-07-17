@@ -182,7 +182,7 @@ if st.session_state.role in ["teacher", "admin", "dept_admin"]:
                     except Exception as e:
                         st.error(f"❌ Error while saving attendance: {e}")
 
- Camp Days Entry
+ #Camp Days Entry
 st.subheader("🏕️ Camp Days Entry")
 camp_student = st.selectbox("Select Student", students_df["student_id"].unique(), key="camp_student")
 camp_type = st.selectbox("Camp Type", ["NSS", "NCC"], key="camp_type")

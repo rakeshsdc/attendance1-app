@@ -106,7 +106,7 @@ if st.session_state.role in ["teacher", "admin", "dept_admin"]:
     assigned_courses = courses[courses["teacher_id"] == st.session_state.teacher_id]
     if not assigned_courses.empty:
         with st.expander("📘 Take Attendance")
-    assigned_courses = courses[courses["teacher_id"] == st.session_state.teacher_id]
+        assigned_courses = courses[courses["teacher_id"] == st.session_state.teacher_id]
     if assigned_courses.empty:
         st.info("You have no assigned courses.")
     else:

@@ -188,13 +188,13 @@ if st.session_state.role in ["teacher", "admin", "dept_admin"]:
         else:
             st.warning("No attendance data to submit.")
                 # ------------------- Instant Report -------------------
-            st.subheader("📊 Attendance Summary")
-            summary = new_df.groupby("status")["student_id"].count().reset_index()
-            summary.columns = ["Status", "Count"]
-            st.dataframe(summary)
-            st.rerun()
-        else:
-            st.warning("⚠️ No students enrolled in this course.")
+            # st.subheader("📊 Attendance Summary")
+            # summary = new_df.groupby("status")["student_id"].count().reset_index()
+            # summary.columns = ["Status", "Count"]
+            # st.dataframe(summary)
+            # st.rerun()
+        # else:
+            # st.warning("⚠️ No students enrolled in this course.")
             # ------------------- Consolidated Department Report (All Courses of Students) -------------------
 # ------------------- Consolidated Department Report (All Courses of Students) -------------------
 if st.session_state.role in ["admin", "dept_admin"]:

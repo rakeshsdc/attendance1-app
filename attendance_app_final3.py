@@ -1,6 +1,5 @@
 import streamlit as st
 import pandas as pd
-import os
 from datetime import date, datetime
 
 st.set_page_config(page_title="FYUGP Attendance", layout="wide")

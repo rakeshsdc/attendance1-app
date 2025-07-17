@@ -113,7 +113,6 @@ if st.session_state.role in ["teacher", "admin", "dept_admin"]:
         selected_course = st.selectbox("Select Course", assigned_courses["course_id"].tolist())
         selected_date = st.date_input("Date", value=date.today())
 
-        # Ensure selected_date is datetime for comparison
         selected_date = pd.to_datetime(selected_date)
 
         attendance["date"] = pd.to_datetime(attendance["date"], errors='coerce')
@@ -162,39 +161,64 @@ if st.session_state.role in ["teacher", "admin", "dept_admin"]:
                         "duration": duration
                     })
 
-                # ✅ Convert to DataFrame
                 if new_data:
                     new_df = pd.DataFrame(new_data)
-
-            # Load existing attendance to avoid losing data
                     try:
                         existing = pd.read_csv("attendance.csv")
                         existing["date"] = pd.to_datetime(existing["date"], errors='coerce')
                     except FileNotFoundError:
                         existing = pd.DataFrame(columns=["date", "hour", "course_id", "student_id", "status", "marked_by", "extra_time", "duration"])
-            # ✅ Ensure 'existing' is a DataFrame and columns match
+
                     required_columns = ["date", "hour", "course_id", "student_id", "status", "marked_by", "extra_time", "duration"]
                     for col in required_columns:
                         if col not in existing.columns:
-                            existing[col] = None  # or appropriate default
+                            existing[col] = None
                     try:
                         combined = pd.concat([existing, new_df], ignore_index=True)
                         combined.to_csv("attendance.csv", index=False)
                         st.success("Attendance submitted successfully!")
                         st.subheader("📊 Attendance Summary (Last Submission)")
-                        st.write(summary)
+                        st.dataframe(new_df)
                     except Exception as e:
                         st.error(f"❌ Error while saving attendance: {e}")
-        else:
-            st.warning("No attendance data to submit.")
-                # ------------------- Instant Report -------------------
-            # st.subheader("📊 Attendance Summary")
-            # summary = new_df.groupby("status")["student_id"].count().reset_index()
-            # summary.columns = ["Status", "Count"]
-            # st.dataframe(summary)
-            # st.rerun()
-        # else:
-            # st.warning("⚠️ No students enrolled in this course.")
+
+# ------------------- Camp Days Entry -------------------
+if st.session_state.role in ["admin", "dept_admin"]:
+    st.subheader("🏕️ Camp Day Entry")
+    with st.form("camp_form"):
+        student_id = st.selectbox("Select Student", students["student_id"].tolist())
+        activity = st.selectbox("Activity", ["NSS", "NCC", "Club", "Camp"])
+        start_date = st.date_input("Start Date")
+        end_date = st.date_input("End Date")
+        submit_camp = st.form_submit_button("Add Camp Entry")
+        if submit_camp:
+            new_camp = pd.DataFrame.from_dict([{ "student_id": student_id, "start_date": start_date, "end_date": end_date, "activity": activity }])
+            camp_days = pd.concat([camp_days, new_camp], ignore_index=True)
+            camp_days.to_csv("camp_days.csv", index=False)
+            st.success("Camp entry added.")
+
+# ------------------- Delete Attendance Entry -------------------
+if st.session_state.role in ["admin", "dept_admin"]:
+    st.subheader("🗑️ Delete Attendance Entry")
+    date_filter = st.date_input("Filter by Date to Delete")
+    filtered = attendance[attendance["date"] == pd.to_datetime(date_filter)]
+    if not filtered.empty:
+        selected = st.selectbox("Select Record to Delete", filtered.apply(lambda x: f"{x['student_id']} - {x['status']} ({x['hour']})", axis=1).tolist())
+        if st.button("Confirm Delete"):
+            idx = filtered.index[filtered.apply(lambda x: f"{x['student_id']} - {x['status']} ({x['hour']})" == selected, axis=1)].tolist()
+            if idx:
+                attendance.drop(index=idx, inplace=True)
+                attendance.to_csv("attendance.csv", index=False)
+                st.success("Entry deleted.")
+
+# ------------------- Full Attendance Summary -------------------
+st.subheader("📊 Full Attendance Summary")
+if not attendance.empty:
+    grouped = attendance.groupby(["student_id", "status"]).size().unstack(fill_value=0)
+    st.dataframe(grouped)
+    st.download_button("📥 Download Attendance Summary", data=grouped.to_csv().encode(), file_name="attendance_summary.csv")
+else:
+    st.info("No attendance records to display.")
             # ------------------- Consolidated Department Report (All Courses of Students) -------------------
 # ------------------- Consolidated Department Report (All Courses of Students) -------------------
 if st.session_state.role in ["admin", "dept_admin"]:

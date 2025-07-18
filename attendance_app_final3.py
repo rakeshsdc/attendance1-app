@@ -184,7 +184,7 @@ if st.session_state.role in ["teacher", "admin", "dept_admin"]:
 
  #Camp Days Entry
 st.subheader("🏕️ Camp Days Entry")
-camp_student = st.selectbox("Select Student", students_df["student_id"].unique(), key="camp_student")
+camp_student = st.selectbox("Select Student", students["student_id"].unique(), key="camp_student")
 camp_type = st.selectbox("Camp Type", ["NSS", "NCC"], key="camp_type")
 camp_start = st.date_input("Start Date", key="camp_start")
 camp_end = st.date_input("End Date", key="camp_end")

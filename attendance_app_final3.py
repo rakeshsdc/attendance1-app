@@ -228,3 +228,127 @@ if not attendance.empty:
     st.download_button("📥 Download Attendance Summary", data=grouped.to_csv().encode(), file_name="attendance_summary.csv")
 else:
     st.info("No attendance records to display.")
+    # ------------------- Consolidated Department Report (All Courses of Students) -------------------
+if st.session_state.role in ["admin", "dept_admin"]:
+    st.subheader("\U0001F4CB Consolidated Department Attendance Report")
+
+    dept_id = st.session_state.department if st.session_state.role == "dept_admin" else None
+    from_dt = st.date_input("From Date", value=date.today())
+    to_dt = st.date_input("To Date", value=date.today())
+
+    from_dt = pd.to_datetime(from_dt)
+    to_dt = pd.to_datetime(to_dt)
+
+    filtered_attendance = attendance[(attendance["date"] >= from_dt) & (attendance["date"] <= to_dt)].copy()
+
+    # Remove camp day entries
+    camp_set = set()
+    for _, row in camp_days.iterrows():
+        for d in pd.date_range(row["start_date"], row["end_date"]):
+            camp_set.add((row["student_id"], d.strftime("%Y-%m-%d")))
+
+    filtered_attendance["date_str"] = filtered_attendance["date"].dt.strftime("%Y-%m-%d")
+    filtered_attendance = filtered_attendance[~filtered_attendance.apply(lambda x: (x["student_id"], x["date_str"]) in camp_set, axis=1)]
+    if filtered_attendance.empty:
+        st.info("No attendance data found yet for this date range.")
+        st.stop()
+
+    # Get all students under department (if dept_admin) or all (if admin)
+    if dept_id:
+        dept_students = students[students["major_course"] == dept_id]
+    else:
+        dept_students = students
+
+    # 🔁 NEW: All courses of students (not just major)
+    relevant_students = enrollment[enrollment["student_id"].isin(dept_students["student_id"])]
+    all_course_ids = relevant_students["course_id"].unique()
+    all_course_att = filtered_attendance[filtered_attendance["course_id"].isin(all_course_ids)]
+
+    # Summary calculation
+    summary = all_course_att.groupby("student_id")["status"].agg([
+        ("attended", lambda x: (x != "A").sum()),
+        ("total", "count")
+    ]).reset_index()
+    summary["percent"] = (summary["attended"] / summary["total"] * 100).round(1)
+
+    report = pd.merge(dept_students, summary, on="student_id", how="left").fillna(0)
+    report["attended"] = report["attended"].astype(int)
+    report["total"] = report["total"].astype(int)
+
+    st.dataframe(report[["student_id", "name", "attended", "total", "percent"]])
+    st.download_button("\U0001F4E5 Download Consolidated Report", data=report.to_csv(index=False), file_name="consolidated_report.csv", mime="text/csv")
+# ------------------- Admin & Dept Admin Camp Day Management -------------------
+if st.session_state.role in ["admin", "dept_admin"]:
+    st.subheader("⛺ Manage Camp Days")
+    with st.form("Add Camp Day"):
+        student_id = st.selectbox("Select Student", students["student_id"])
+        start_date = st.date_input("Start Date")
+        end_date = st.date_input("End Date")
+        activity = st.selectbox("Activity", ["NSS", "NCC", "Camp"])
+        if st.form_submit_button("Add Camp Day"):
+            new_entry = pd.DataFrame([{"student_id": student_id, "start_date": start_date, "end_date": end_date, "activity": activity}])
+            camp_days = pd.concat([camp_days, new_entry], ignore_index=True)
+            camp_days.to_csv("camp_days.csv", index=False)
+            st.success("Camp days added.")
+
+    if not camp_days.empty:
+        st.write("### Existing Camp Days")
+        camp_days_display = camp_days.copy()
+        camp_days_display["start_date"] = pd.to_datetime(camp_days_display["start_date"]).dt.date
+        camp_days_display["end_date"] = pd.to_datetime(camp_days_display["end_date"]).dt.date
+        selected_idx = st.selectbox("Select entry to delete", camp_days_display.index.tolist())
+        if st.button("Delete Selected Entry"):
+            camp_days = camp_days.drop(index=selected_idx).reset_index(drop=True)
+            camp_days.to_csv("camp_days.csv", index=False)
+            st.success("Selected camp entry deleted.")
+
+# ------------------- Department-wise Report -------------------
+if st.session_state.role in ["admin", "dept_admin"]:
+    st.subheader("\U0001F4CA Department-wise Reports")
+    from_dt = st.date_input("From Date", value=date.today(), key="from")
+    to_dt = st.date_input("To Date", value=date.today(), key="to")
+
+    try:
+        from_dt = pd.to_datetime(from_dt)
+        to_dt = pd.to_datetime(to_dt)
+        attendance["date"] = pd.to_datetime(attendance["date"], errors="coerce")
+        filtered = attendance[(attendance["date"] >= from_dt) & (attendance["date"] <= to_dt)].copy()
+    except Exception as e:
+        st.error(f"Date filtering failed: {e}")
+        filtered = pd.DataFrame()
+
+    if not filtered.empty:
+        camp_set = set()
+        for _, row in camp_days.iterrows():
+            for d in pd.date_range(row["start_date"], row["end_date"]):
+                camp_set.add((row["student_id"], d.strftime("%Y-%m-%d")))
+        filtered["date_str"] = filtered["date"].dt.strftime("%Y-%m-%d")
+        filtered = filtered[~filtered.apply(lambda x: (x["student_id"], x["date_str"]) in camp_set, axis=1)]
+
+        dept_id = st.session_state.department if st.session_state.role == "dept_admin" else None
+        if dept_id:
+            dept_students = students[students["major_course"] == dept_id]
+        else:
+            dept_students = students
+
+        final_data = filtered[filtered["student_id"].isin(dept_students["student_id"])]
+
+        summary = final_data.groupby("student_id")["status"].agg([
+            ("attended", lambda x: (x != "A").sum()),
+            ("total", "count")
+        ]).reset_index()
+        summary["percent"] = (summary["attended"] / summary["total"] * 100).round(1)
+
+        report = pd.merge(dept_students, summary, on="student_id", how="left").fillna(0)
+        report["attended"] = report["attended"].astype(int)
+        report["total"] = report["total"].astype(int)
+
+        st.write("### \U0001F4CB Consolidated Department Report")
+        st.dataframe(report[["student_id", "name", "total", "attended", "percent"]])
+        st.download_button("\U0001F4C5 Download Consolidated Report", report.to_csv(index=False), "consolidated_report.csv")
+
+        detailed_log = pd.merge(final_data, students, on="student_id", how="left")
+        st.write("### \U0001F9FE Detailed Log")
+        st.download_button("\U0001F4C5 Download Detailed Log", detailed_log.to_csv(index=False), "detailed_log.csv")
+    else:
+        st.info("No attendance records in this range.")
